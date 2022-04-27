@@ -44,9 +44,11 @@ class TemplateProcessor
         $this->logger = $logger;
         $this->twigDynamicContentLoader = $twigDynamicContentLoader;
         $logger->debug('TemplateProcessor: created $twigDynamicContentLoader');
+
         $this->twigEnv = new \Twig\Environment(new \Twig\Loader\ChainLoader([
             $twigDynamicContentLoader, new \Twig\Loader\ArrayLoader([])
         ]));
+       
         $this->configureTwig($this->twigEnv);
         $this->feedFactory = $feedFactory;
     }

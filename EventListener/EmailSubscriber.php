@@ -7,6 +7,7 @@ use Mautic\EmailBundle\Helper\PlainTextHelper;
 use MauticPlugin\MauticAdvancedTemplatesBundle\Helper\TemplateProcessor;
 use Monolog\Logger;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use MauticPlugin\MauticAdvancedTemplatesBundle\Helper\FormSubmission;
 
 /**
  * Class EmailSubscriber.
@@ -43,7 +44,7 @@ class EmailSubscriber implements EventSubscriberInterface
     {
         return [
             EmailEvents::EMAIL_ON_SEND => ['onEmailGenerate', 300],
-            EmailEvents::EMAIL_ON_DISPLAY => ['onEmailGenerate', 0],
+            EmailEvents::EMAIL_ON_DISPLAY => ['onEmailGenerate', 300],
         ];
     }
 
@@ -68,6 +69,11 @@ class EmailSubscriber implements EventSubscriberInterface
      */
     public function onEmailGenerate(Events\EmailSendEvent $event)
     {
+        if ($event->isDynamicContentParsing()) {
+            // prevent a loop
+            return;
+        }
+
         $this->logger->info('onEmailGenerate MauticAdvancedTemplatesBundle\EmailSubscriber');
 
         if ($event->getEmail()) {
@@ -78,9 +84,11 @@ class EmailSubscriber implements EventSubscriberInterface
             $content = $event->getContent();
         }
 
+        $formData = [];
         $lead = $event->getLead();
-        $leadCredentials = $lead->getProfileFields();
-        $formData = $this->getFormData($leadCredentials['id']);
+        if(is_array($lead)){
+            $formData = $this->getFormData($lead['id']);
+        }
 
         //we want this variables in the twig engine
         $templateVars = array(

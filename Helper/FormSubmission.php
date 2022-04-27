@@ -22,15 +22,14 @@ class FormSubmission
      */
     public function getFormData($leadId)
     {
-
         $formData = array();
-
         $connection = $this->dbal;
+
         $stmt       =  $connection->executeQuery(
-            "SELECT * from form_submissions fs
+            "SELECT max(id) as id,form_id from form_submissions fs
              WHERE
                 fs.lead_id = $leadId
-                order by date_submitted desc"
+                group by form_id"
         );
         $stmt->execute();
 
@@ -44,39 +43,40 @@ class FormSubmission
         foreach ($formSubmissions as $submission) 
         {
             $formId = (int) $submission['form_id'];
-            $formSubmissionEntry = $submission;
-            break;
+            if (!$formId) {
+                continue;
+            }
+    
+            // build name for form result table
+            $stmt       =  $connection->executeQuery(
+                'SELECT f.alias from forms f where f.`id` =' . $formId
+            );
+            $stmt->execute();
+    
+            $formRecord = $stmt->fetchAll();
+            if (!$formRecord) {
+                continue;
+            }
+    
+            //try to fetch the form data
+            $tableName = 'form_results_' . $formId . '_' . $formRecord[0]['alias'];
+    
+            $stmt       =  $connection->executeQuery(
+                'select * from ' . $tableName . ' where submission_id = ' . $submission['id']
+            );
+            $stmt->execute();
+    
+            $postData = $stmt->fetchAll();
+
+            if (is_array($postData) && count($postData) > 0) {
+                if( !isset($formData[ $submission['form_id'] ] )){
+                    $formData[ $submission['form_id'] ] = $postData[0];
+                    $formData[ $formRecord[0]['alias'] ] = $postData[0];
+                }
+            }            
         }
 
-        if (!$formId) {
-            return array();
-        }
-
-        // build name for form result table
-        $stmt       =  $connection->executeQuery(
-            'SELECT f.alias from forms f where f.`id` =' . $formId
-        );
-        $stmt->execute();
-
-        $formRecord = $stmt->fetchAll();
-        if (!$formRecord) {
-            return array();
-        }
-
-        //try to fetch the form data
-        $tableName = 'form_results_' . $formId . '_' . $formRecord[0]['alias'];
-
-        $stmt       =  $connection->executeQuery(
-            'select * from ' . $tableName . ' where submission_id = ' . $formSubmissionEntry['id']
-        );
-        $stmt->execute();
-
-        $formData = $stmt->fetchAll();
-        if (is_array($formData) && count($formData) > 0) {
-            return $formData[0];
-        }
-
-        return array();
+        return $formData;
     }    
 
 }
