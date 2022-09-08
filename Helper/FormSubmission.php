@@ -22,6 +22,12 @@ class FormSubmission
      */
     public function getFormData($leadId)
     {
+        
+        if(!$leadId)
+        {
+           return array();
+        }        
+        
         $formData = array();
         $connection = $this->dbal;
 
