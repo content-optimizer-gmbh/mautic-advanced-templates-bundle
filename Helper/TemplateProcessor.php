@@ -90,8 +90,16 @@ class TemplateProcessor
         return function ($matches) use ($templateVars) {
             $templateSource = $matches[1];
             $this->logger->debug('BLOCK SOURCE: ' . var_export($templateSource, true));
-            $template = $this->twigEnv->createTemplate($templateSource);
-            $renderedTemplate = $template->render($templateVars);
+            
+            try {
+                $template = $this->twigEnv->createTemplate($templateSource);
+                $renderedTemplate = $template->render($templateVars);
+
+            } catch (\Twig\Error\SyntaxError $e) {
+                // $template contains one or more syntax errors
+                $renderedTemplate = 'Twig Syntax Error! '.$e->getMessage();
+            }
+            
             $this->logger->debug('RENDERED BLOCK: ' . var_export($renderedTemplate, true));
             return $renderedTemplate;
         };
