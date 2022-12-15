@@ -67,6 +67,13 @@ class TemplateProcessor
             TemplateProcessor::$matchTwigBlockRegex => $this->processTwigBlock($lead)
         ], $content);
         $this->logger->debug('TemplateProcessor: Template processed');
+        
+        //BUGFIX Tracking Pixel
+        $trackingImg = '<img height="1" width="1" src="{tracking_pixel}" alt="" />';
+        if (false === strpos($content, 'tracking_pixel')) {
+          $content = str_replace('</body>', $trackingImg.'</body>', $content);
+        }        
+        
         return $content;
     }
 
