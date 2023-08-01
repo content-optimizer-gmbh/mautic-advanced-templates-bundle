@@ -36,7 +36,7 @@ class Feed
         
         // Open the file using the HTTP headers set above
         $content = file_get_contents($feed, false, $context);
-        $headers = implode("\n", $http_response_header);
+        $headers = isset($http_response_header) ? implode(“\n”,$http_response_header) : '';
 
         //check if the stream ist json encoded
         if (preg_match_all("/^content-type\s*:\s*(.*)$/mi", $headers, $matches)) {
